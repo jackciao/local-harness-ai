@@ -1,0 +1,9 @@
+[submodule "llama_cpp"]
+	path = llama_cpp
+	url = https://github.com/ggerganov/llama.cpp.git
+[submodule "llama_cpp_bonsai"]
+	path = llama_cpp_bonsai
+	url = https://github.com/PrismML-Eng/llama.cpp.git
+[submodule "cline"]
+	path = vendor/cline
+	url = https://github.com/cline/cline.git

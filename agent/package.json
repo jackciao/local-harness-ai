@@ -1,0 +1,8 @@
+{
+  "name": "local-harness-ai-agent",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@cline/sdk": "^0.0.83"
+  }
+}
