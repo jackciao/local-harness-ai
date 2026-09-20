@@ -5,7 +5,7 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "check": "node --check main.cjs && node --check preload.cjs && node --check renderer.js",
+    "check": "node --check main.cjs && node --check preload.cjs && node --check renderer.js && node test-parity.mjs",
     "prepare-runtime": "node prepare-runtime.mjs",
     "dist:win": "electron-builder --win nsis --x64"
   },
