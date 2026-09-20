@@ -30,8 +30,10 @@ jobs:
       - name: Build llama-server
         shell: pwsh
         run: |
-          cmake -S llama_cpp_bonsai -B build-win -A x64 -DLLAMA_CURL=OFF -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_OPENMP=OFF
+          cmake -S llama_cpp_bonsai -B build-win -A x64 -DBUILD_SHARED_LIBS=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DLLAMA_CURL=OFF -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_OPENMP=OFF
           cmake --build build-win --config Release --target llama-server --parallel
+          & "$env:GITHUB_WORKSPACE\build-win\bin\Release\llama-server.exe" --version
+          if ($LASTEXITCODE -ne 0) { throw "llama-server failed before packaging" }
       - name: Install desktop dependencies
         run: |
           npm ci --prefix agent
@@ -44,8 +46,11 @@ jobs:
           npm run prepare-runtime --prefix desktop
           npm run check --prefix desktop
           node agent/local-harness-agent.mjs --self-check
-          Test-Path desktop/runtime/llama-server.exe
-          Test-Path desktop/runtime/agent/local-harness-agent.mjs
+          if ((Get-Content desktop/package.json | ConvertFrom-Json).version -ne '1.0.0') { throw "desktop version changed" }
+          if (!(Test-Path desktop/runtime/llama-server.exe)) { throw "missing llama-server.exe" }
+          if (!(Test-Path desktop/runtime/agent/local-harness-agent.mjs)) { throw "missing agent" }
+          & desktop/runtime/llama-server.exe --version
+          if ($LASTEXITCODE -ne 0) { throw "packaged llama-server failed" }
       - name: Build installer
         run: npm run dist:win --prefix desktop
       - name: Name release installer
@@ -59,8 +64,16 @@ jobs:
           $installer = Get-Item desktop/dist/local_harness_ai_1_0.exe
           Start-Process $installer.FullName -ArgumentList '/S' -Wait
           $installed = Join-Path $env:LOCALAPPDATA 'Programs\local-harness-ai'
-          Test-Path (Join-Path $installed 'local-harness-ai.exe')
-          Test-Path (Join-Path $installed 'resources\runtime\llama-server.exe')
+          $app = Join-Path $installed 'local-harness-ai.exe'
+          $server = Join-Path $installed 'resources\runtime\llama-server.exe'
+          if (!(Test-Path $app)) { throw "installed desktop app is missing" }
+          if (!(Test-Path $server)) { throw "installed llama-server is missing" }
+          $serverCheck = Start-Process $server -ArgumentList '--version' -PassThru -Wait
+          if ($serverCheck.ExitCode -ne 0) { throw "installed llama-server failed" }
+          $appCheck = Start-Process $app -PassThru
+          Start-Sleep -Seconds 5
+          if ($appCheck.HasExited) { throw "installed desktop app exited during launch" }
+          Stop-Process -Id $appCheck.Id
       - uses: actions/upload-artifact@v4
         with:
           name: local_harness_ai_1_0.exe
