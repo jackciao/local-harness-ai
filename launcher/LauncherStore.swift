@@ -243,6 +243,10 @@ final class LauncherStore: ObservableObject {
     private var agentBuffer = ""
     private var streamAlias: [String: String] = [:]
 
+    private var runtimeRoot: URL {
+        Bundle.main.resourceURL ?? Bundle.main.bundleURL.deletingLastPathComponent()
+    }
+
     var isOnline: Bool {
         phase == .online || phase == .external
     }
@@ -407,7 +411,7 @@ final class LauncherStore: ObservableObject {
                 return
             }
 
-            let root = Bundle.main.bundleURL.deletingLastPathComponent()
+            let root = runtimeRoot
             let script = root.appendingPathComponent("run_server.sh")
             guard FileManager.default.isExecutableFile(atPath: script.path) else {
                 phase = .failed("缺少 run_server.sh")
@@ -766,7 +770,7 @@ final class LauncherStore: ObservableObject {
         let session = AgentSession(
             id: UUID().uuidString,
             title: "新会话",
-            workspace: bound.isEmpty ? Bundle.main.bundleURL.deletingLastPathComponent().path : bound,
+            workspace: bound.isEmpty ? FileManager.default.homeDirectoryForCurrentUser.path : bound,
             allowWrites: agentAllowWrites,
             blocks: [],
             updatedAt: Date().timeIntervalSince1970
@@ -818,7 +822,7 @@ final class LauncherStore: ObservableObject {
             return
         }
 
-        let root = Bundle.main.bundleURL.deletingLastPathComponent()
+        let root = runtimeRoot
         let script = root.appendingPathComponent("agent/local-harness-agent.mjs")
         guard FileManager.default.fileExists(atPath: script.path) else {
             upsertAgentBlock(id: "error", kind: .error, title: "错误", text: "缺少 Cline 代理脚本：\(script.path)", done: true)
@@ -1065,7 +1069,7 @@ final class LauncherStore: ObservableObject {
             executable: "/bin/ps",
             arguments: ["-p", String(resolvedPID), "-o", "command="]
         ) else { return nil }
-        let root = Bundle.main.bundleURL.deletingLastPathComponent().path
+        let root = runtimeRoot.path
         let expectedBinary = root + "/llama_cpp_bonsai/build/bin/llama-server"
         guard command.contains(expectedBinary), command.contains(localModelPath) else { return nil }
         return (resolvedPID, command)
@@ -1189,7 +1193,7 @@ final class LauncherStore: ObservableObject {
 
     private func loadSettings() {
         let defaults = UserDefaults.standard
-        let root = Bundle.main.bundleURL.deletingLastPathComponent()
+        let root = runtimeRoot
         localModelPath = defaults.string(forKey: "harness.model")
             ?? root.appendingPathComponent("Ternary-Bonsai-2-27B-PTQ1_0.gguf").path
         localMMProjPath = defaults.string(forKey: "harness.mmproj") ?? ""
@@ -1375,7 +1379,7 @@ final class LauncherStore: ObservableObject {
             persistSessions()
             return
         }
-        let root = Bundle.main.bundleURL.deletingLastPathComponent().path
+        let root = FileManager.default.homeDirectoryForCurrentUser.path
         let session = AgentSession(
             id: UUID().uuidString,
             title: "新会话",
@@ -1427,8 +1431,7 @@ final class LauncherStore: ObservableObject {
     }
 
     private func resolvedNode() -> String? {
-        let bundledNode = Bundle.main.bundleURL
-            .deletingLastPathComponent()
+        let bundledNode = runtimeRoot
             .appendingPathComponent("node/bin/node")
             .path
         let candidates = [
