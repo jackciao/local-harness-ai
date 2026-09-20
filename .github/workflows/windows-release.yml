@@ -47,21 +47,21 @@ jobs:
         shell: pwsh
         run: |
           $installer = Get-ChildItem desktop/dist/*Setup*.exe | Select-Object -First 1
-          Move-Item $installer.FullName desktop/dist/local_harness_ai_1_1.exe
+          Move-Item $installer.FullName desktop/dist/local_harness_ai_1_0.exe
       - name: Install smoke test
         shell: pwsh
         run: |
-          $installer = Get-Item desktop/dist/local_harness_ai_1_1.exe
+          $installer = Get-Item desktop/dist/local_harness_ai_1_0.exe
           Start-Process $installer.FullName -ArgumentList '/S' -Wait
           $installed = Join-Path $env:LOCALAPPDATA 'Programs\local-harness-ai'
           Test-Path (Join-Path $installed 'local-harness-ai.exe')
           Test-Path (Join-Path $installed 'resources\runtime\llama-server.exe')
       - uses: actions/upload-artifact@v4
         with:
-          name: local_harness_ai_1_1.exe
-          path: desktop/dist/local_harness_ai_1_1.exe
+          name: local_harness_ai_1_0.exe
+          path: desktop/dist/local_harness_ai_1_0.exe
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
-          files: desktop/dist/local_harness_ai_1_1.exe
-          generate_release_notes: true
+          files: desktop/dist/local_harness_ai_1_0.exe
+          body: "修复版 Windows 完整桌面应用：包含本地/云推理、视觉输入、开发 Agent、工作区、路由、日志和设置。此 EXE 直接替换此前不完整的 v1.0.0 Windows 安装器；不包含 GGUF 模型、API Key 或本机配置。"
