@@ -1,6 +1,6 @@
 # local-harness-ai
 
-面向本地 GGUF 模型的桌面运行器：在 Mac 上启动 `llama.cpp` 服务，提供对话、开发代理、模型状态和视觉图片输入；也提供可下载的 Windows x64 本地推理服务。
+面向本地 GGUF 模型的 Mac 桌面运行器：启动 `llama.cpp` 服务，提供对话、开发代理、模型状态和视觉图片输入。
 
 ## 功能
 
@@ -14,7 +14,6 @@
 从 [Releases](https://github.com/jackciao/local-harness-ai/releases) 下载：
 
 - macOS arm64：`local_harness_ai_1_0.dmg`，将应用拖至 `Applications` 后启动
-- Windows x64：`local_harness_ai_1_0.exe`，运行安装器后从开始菜单或桌面快捷方式启动
 
 发布包不包含模型。请自行准备 `.gguf` 主模型；使用视觉功能时，还需选择该模型对应的 `mmproj` `.gguf` 文件。
 
