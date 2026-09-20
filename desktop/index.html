@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>local-harness-ai</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside>
+    <h1>H</h1><strong>local-harness-ai</strong><small>Local model harness</small>
+    <nav>
+      <button data-page="overview" class="active">概览</button>
+      <button data-page="agent">开发代理</button>
+      <button data-page="routes">路由</button>
+      <button data-page="logs">日志</button>
+      <button data-page="settings">设置</button>
+    </nav>
+    <footer id="phase">● 离线</footer>
+  </aside>
+  <main>
+    <section id="overview" class="page active">
+      <header><h2>本地模型</h2><span id="status">离线</span><button id="start">▶ 启动</button><button id="stop">■ 停止</button></header>
+      <div class="grid">
+        <article><label>模型</label><b id="model-label">未选择</b></article>
+        <article><label>地址</label><b>127.0.0.1:7890</b></article>
+        <article><label>上下文</label><b id="context-label">8K</b></article>
+        <article><label>状态</label><b id="slot-label">等待服务</b></article>
+      </div>
+      <div class="columns">
+        <article><h3>活动日志</h3><pre id="overview-log"></pre></article>
+        <article><h3>Chat Console</h3><div id="chat"></div><div class="composer"><input id="chat-input" placeholder="输入消息或添加图片"><input id="chat-images" type="file" multiple accept="image/*"><button id="send-chat">发送</button></div></article>
+      </div>
+    </section>
+    <section id="agent" class="page">
+      <header><h2>开发代理</h2><button id="workspace">选择工作区</button><span id="workspace-label"></span><label><input id="allow-writes" type="checkbox" checked>允许写入</label><button id="new-session">新对话</button></header>
+      <div class="agent-layout"><article id="sessions"></article><article><div id="agent-transcript"></div><div class="composer"><textarea id="agent-input" placeholder="让代理读取、分析或修改工作区文件"></textarea><input id="agent-files" type="file" multiple><button id="send-agent">发送</button><button id="stop-agent">停止</button></div></article><article><h3>工作区</h3><div id="file-browser"></div><pre id="file-preview"></pre><h3>工具</h3><div class="composer"><input id="browser-url" placeholder="https://…"><button id="open-browser">打开浏览器</button></div><div class="composer"><input id="terminal-command" placeholder="PowerShell 命令"><button id="run-command">运行</button></div><pre id="terminal-output"></pre></article></div>
+    </section>
+    <section id="routes" class="page">
+      <header><h2>路由与诊断</h2><button id="test-route">测试本地服务</button></header>
+      <article><p>OpenAI 兼容地址</p><code>http://127.0.0.1:7890/v1</code><p id="route-result">尚未测试</p></article>
+      <article><h3>Claude Desktop / CC Switch</h3><p>外部服务地址：127.0.0.1:15721。此应用仅检测其可用性。</p></article>
+    </section>
+    <section id="logs" class="page"><header><h2>日志</h2><button id="clear-log">清空</button></header><pre id="all-log"></pre></section>
+    <section id="settings" class="page">
+      <header><h2>设置</h2><button id="save-settings">保存</button></header>
+      <form id="settings-form">
+        <fieldset><legend>推理来源</legend><select name="source"><option value="local">本地模型</option><option value="cloud">云 API</option></select></fieldset>
+        <fieldset><legend>本地模型</legend><label>GGUF <input name="model" readonly><button type="button" data-pick="model">选择 GGUF</button></label><label>视觉 MMProj <input name="mmproj" readonly><button type="button" data-pick="mmproj">选择 MMProj</button></label><label>聊天模板 <input name="chatTemplate"></label><label>上下文 <input name="context" type="number" min="1024" step="1024"></label><label>KV <select name="kv"><option>q4_0</option><option>q8_0</option><option>f16</option></select></label><label><input name="compatibility" type="checkbox">兼容模式</label><label><input name="ngram" type="checkbox">N-gram speculative</label><label><input name="reasoning" type="checkbox">思考模式</label></fieldset>
+        <fieldset><legend>云 API</legend><label>Base URL <input name="cloudBaseUrl"></label><label>模型 <input name="cloudModel"></label><label>API Key <input name="cloudApiKey" type="password" placeholder="留空保留现有密钥"></label></fieldset>
+      </form>
+    </section>
+  </main>
+  <script src="renderer.js"></script>
+</body>
+</html>

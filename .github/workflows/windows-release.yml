@@ -1,0 +1,67 @@
+name: Windows desktop release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            agent/package-lock.json
+            desktop/package-lock.json
+      - name: Build llama-server
+        shell: pwsh
+        run: |
+          cmake -S llama_cpp_bonsai -B build-win -A x64 -DLLAMA_CURL=OFF -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_OPENMP=OFF
+          cmake --build build-win --config Release --target llama-server --parallel
+      - name: Install desktop dependencies
+        run: |
+          npm ci --prefix agent
+          npm ci --prefix desktop
+      - name: Assemble runtime and verify contracts
+        shell: pwsh
+        env:
+          LH_SERVER_PATH: ${{ github.workspace }}\build-win\bin\Release\llama-server.exe
+        run: |
+          npm run prepare-runtime --prefix desktop
+          npm run check --prefix desktop
+          node agent/local-harness-agent.mjs --self-check
+          Test-Path desktop/runtime/llama-server.exe
+          Test-Path desktop/runtime/agent/local-harness-agent.mjs
+      - name: Build installer
+        run: npm run dist:win --prefix desktop
+      - name: Name release installer
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem desktop/dist/*Setup*.exe | Select-Object -First 1
+          Move-Item $installer.FullName desktop/dist/local_harness_ai_1_1.exe
+      - name: Install smoke test
+        shell: pwsh
+        run: |
+          $installer = Get-Item desktop/dist/local_harness_ai_1_1.exe
+          Start-Process $installer.FullName -ArgumentList '/S' -Wait
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs\local-harness-ai'
+          Test-Path (Join-Path $installed 'local-harness-ai.exe')
+          Test-Path (Join-Path $installed 'resources\runtime\llama-server.exe')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: local_harness_ai_1_1.exe
+          path: desktop/dist/local_harness_ai_1_1.exe
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: desktop/dist/local_harness_ai_1_1.exe
+          generate_release_notes: true

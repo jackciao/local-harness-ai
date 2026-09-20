@@ -1,0 +1,17 @@
+:root { color-scheme: dark; font: 14px "Segoe UI", sans-serif; background: #08111c; color: #edf5ff; }
+* { box-sizing: border-box; } body { margin: 0; display: flex; height: 100vh; overflow: hidden; }
+aside { width: 210px; padding: 24px 14px; border-right: 1px solid #23364b; background: #0b1521; display: flex; flex-direction: column; gap: 8px; }
+aside h1 { margin: 0; width: 40px; height: 40px; display: grid; place-items: center; color: #7dd3fc; background: #13283b; border-radius: 8px; }
+aside strong { margin-top: 8px; } aside small, label { color: #91a5bb; } nav { display: grid; gap: 5px; margin-top: 28px; }
+button, input, select, textarea { background: #101f30; border: 1px solid #23364b; color: #edf5ff; border-radius: 6px; padding: 9px; }
+button { cursor: pointer; text-align: left; } button:hover, button.active { background: #123250; border-color: #25b7f3; } button#start, button#send-chat, button#send-agent { background: #25b7f3; color: #062033; font-weight: 700; }
+aside footer { margin-top: auto; color: #9bb0c5; } main { flex: 1; padding: 26px; overflow: auto; }
+.page { display: none; } .page.active { display: block; } header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; } header h2 { margin: 0 auto 0 0; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }.columns, .agent-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.agent-layout { grid-template-columns: 180px 1fr 280px; } article, fieldset { background: #0e1a28; border: 1px solid #23364b; border-radius: 8px; padding: 15px; min-width: 0; } article label { display: block; margin-bottom: 7px; } article b { overflow-wrap: anywhere; }
+pre { white-space: pre-wrap; word-break: break-word; font: 12px ui-monospace, monospace; color: #b8c8d9; max-height: 390px; overflow: auto; min-height: 140px; }
+#chat, #agent-transcript { min-height: 310px; max-height: 460px; overflow: auto; display: grid; gap: 10px; } .bubble, .block { padding: 10px; border-radius: 8px; background: #13283b; white-space: pre-wrap; }.user { justify-self: end; background: #123a59; }.assistant, .reply { background: #122235; }.error { color: #ff8791; }
+.composer { display: flex; gap: 7px; margin-top: 10px; } .composer input, .composer textarea { flex: 1; }.composer textarea { min-height: 64px; resize: vertical; }
+#sessions, #file-browser { display: grid; align-content: start; gap: 6px; overflow: auto; max-height: 580px; }.session.selected { outline: 1px solid #25b7f3; } #file-preview { max-height: 280px; }
+form { display: grid; gap: 14px; max-width: 850px; } fieldset { display: grid; gap: 10px; } fieldset label { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 8px; } fieldset label:has(input[type=checkbox]) { display: block; }
+code { color: #7dd3fc; } @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); }.agent-layout { grid-template-columns: 160px 1fr; }.agent-layout > article:last-child { grid-column: span 2; } }
