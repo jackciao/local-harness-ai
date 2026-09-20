@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, unlinkSync, writeFileSync, writeSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { ClineCore } from "@cline/sdk";
@@ -225,7 +226,7 @@ if (args.includes("--self-check")) {
   if (projectEvent({ type: "status", payload: { status: "auto-compacting" } })[0]?.text !== "上下文过长，正在压缩…") throw new Error("compact-status");
   if (projectEvent({ type: "agent_event", payload: { event: { type: "error", error: { message: "Model reached the maximum output token limit before completing the turn" } } } }).length) throw new Error("truncate-noise");
   if (collectImages(["x", "--image", "/a.png", "--image", "/b.jpg"]).join() !== "/a.png,/b.jpg") throw new Error("image-arg");
-  const tmp = `${process.env.TMPDIR || "/tmp"}/lh-img-check.bin`;
+  const tmp = resolve(tmpdir(), "lh-img-check.bin");
   writeFileSync(tmp, Buffer.from("hi"));
   if (!toDataUrl(tmp).startsWith("data:image/png;base64,")) throw new Error("data-url");
   unlinkSync(tmp);
