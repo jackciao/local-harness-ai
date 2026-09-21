@@ -15,7 +15,8 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # 与 llama_cpp_bonsai 官方 CUDA 构建一致：windows-latest 现已是 VS 2026，缺 CUDA VS toolset。
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,18 +33,22 @@ jobs:
         with:
           cuda_version: "13.3"
           cuda_arch: x64
+      - name: Install Ninja
+        run: choco install ninja -y
 
       - name: Build llama-server
-        shell: pwsh
+        shell: cmd
         run: |
-          # sm_75..sm_120 覆盖 RTX 20/30/40/50 与 A100；CUDA 13 已不支持更老架构。
-          cmake -S llama_cpp_bonsai -B build-win -A x64 -DBUILD_SHARED_LIBS=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DLLAMA_CURL=OFF -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="75;80;86;89;120" -DGGML_VULKAN=OFF -DGGML_OPENMP=OFF
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          rem Ninja 不依赖 VS CUDA toolset；sm_75..sm_120 覆盖 RTX 20/30/40/50 与 A100。
+          cmake -S llama_cpp_bonsai -B build-win -G "Ninja Multi-Config" -DBUILD_SHARED_LIBS=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DLLAMA_CURL=OFF -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="75;80;86;89;120" -DGGML_VULKAN=OFF -DGGML_OPENMP=OFF
           cmake --build build-win --config Release --target llama-server --parallel
-          $bin = "$env:GITHUB_WORKSPACE\build-win\bin\Release"
-          Copy-Item "$env:CUDA_PATH\bin\cudart64_*.dll","$env:CUDA_PATH\bin\cublas64_*.dll","$env:CUDA_PATH\bin\cublasLt64_*.dll" $bin
-          # CI runner 没有 NVIDIA 卡：这一步同时验证了无显卡时能回落到 CPU 而不是崩溃。
-          & "$bin\llama-server.exe" --version
-          if ($LASTEXITCODE -ne 0) { throw "llama-server failed before packaging" }
+          copy "%CUDA_PATH%\bin\cudart64_*.dll" build-win\bin\Release\
+          copy "%CUDA_PATH%\bin\cublas64_*.dll" build-win\bin\Release\
+          copy "%CUDA_PATH%\bin\cublasLt64_*.dll" build-win\bin\Release\
+          rem CI runner 没有 NVIDIA 卡：同时验证无显卡时能回落到 CPU 而不是崩溃。
+          build-win\bin\Release\llama-server.exe --version
+          if errorlevel 1 exit /b 1
       - name: Install desktop dependencies
         run: |
           npm ci --prefix agent
