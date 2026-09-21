@@ -33,7 +33,7 @@ const setField = (selector, value) => `const el=document.querySelector('${select
 const check = (selector) => `const el=document.querySelector('${selector}'); el.checked=true; el.dispatchEvent(new Event('input',{bubbles:true}));`;
 
 const checks = [
-  ["开发代理页隐藏导航栏与检查器", `document.querySelector('nav [data-page=agent]').click(); return ${visible("#inspector")} === false && ${visible(".sidebar")} === false;`],
+  ["开发代理页隐藏导航栏与检查器", `document.querySelector('nav [data-page=overview]').click(); document.querySelector('nav [data-page=agent]').click(); return ${visible("#inspector")} === false && ${visible(".sidebar")} === false;`],
   ["概览页恢复导航栏", `document.querySelector('nav [data-page=overview]').click(); return ${visible(".sidebar")};`],
   ["概览页显示右栏检查器", `document.querySelector('nav [data-page=overview]').click(); return ${visible("#inspector")};`],
   ["设置页默认显示本地设置", `document.querySelector('nav [data-page=settings]').click(); return ${visible("#local-settings")} && ${visible("#cloud-settings")} === false;`],

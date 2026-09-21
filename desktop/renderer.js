@@ -594,6 +594,8 @@ window.harness.on("tool-output", (text) => { $("#terminal-output").textContent =
 
 $$("nav button").forEach((button) => button.onclick = () => showPage(button.dataset.page));
 $("#show-overview").onclick = () => showPage("overview");
+// 默认落在开发代理页，同步藏起导航栏/检查器，避免 HTML 静态态与 Swift 全幅工作区不一致。
+showPage("agent");
 // parity: startServer stopServer restartServer
 $("#start").onclick = async () => {
   try { await (lastState.phase === "online" ? window.harness.server.restart() : window.harness.server.start()); }
