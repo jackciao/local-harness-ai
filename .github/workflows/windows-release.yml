@@ -28,6 +28,29 @@ jobs:
           cache-dependency-path: |
             agent/package-lock.json
             desktop/package-lock.json
+      - name: Install desktop dependencies
+        run: |
+          npm ci --prefix agent
+          npm ci --prefix desktop
+      - name: Verify UI behaviour
+        shell: pwsh
+        working-directory: desktop
+        run: |
+          # 必须在编 CUDA 之前跑：这一步不依赖 llama-server，失败不该烧掉一小时编译。
+          # 直接起 electron.exe。Start-Process npx 在 Windows 上经常没把调试端口传进去。
+          # Chromium 开关要写在应用目录前面，否则不会打开 9222。
+          $electron = Join-Path (Get-Location) "node_modules\electron\dist\electron.exe"
+          if (!(Test-Path $electron)) { throw "electron.exe missing" }
+          $out = Join-Path $env:RUNNER_TEMP "electron-ui.out.log"
+          $err = Join-Path $env:RUNNER_TEMP "electron-ui.err.log"
+          $app = Start-Process $electron -ArgumentList "--remote-debugging-port=9222","--disable-gpu","--no-sandbox","." -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+          try {
+            npm run check:ui
+            if ($LASTEXITCODE -ne 0) { throw "UI 交互测试失败" }
+          } finally {
+            if (!$app.HasExited) { Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue }
+            if (Test-Path $err) { Write-Host "--- electron stderr ---"; Get-Content $err -Tail 40 }
+          }
       - name: Install CUDA toolkit
         uses: ./llama_cpp_bonsai/.github/actions/windows-setup-cuda
         with:
@@ -70,10 +93,6 @@ jobs:
           # CI runner 没有 NVIDIA 卡：验证缺显卡时能回落到 CPU，而不是缺 DLL 直接崩。
           & "$dst\llama-server.exe" --version
           if ($LASTEXITCODE -ne 0) { throw "llama-server failed before packaging" }
-      - name: Install desktop dependencies
-        run: |
-          npm ci --prefix agent
-          npm ci --prefix desktop
       - name: Assemble runtime and verify contracts
         shell: pwsh
         env:
@@ -90,14 +109,6 @@ jobs:
           }
           & desktop/runtime/llama-server.exe --version
           if ($LASTEXITCODE -ne 0) { throw "packaged llama-server failed" }
-      - name: Verify UI behaviour
-        shell: pwsh
-        working-directory: desktop
-        run: |
-          # 点一遍真界面：只检查元素存在挡不住"按钮在、点了没反应"这类丢功能。
-          $app = Start-Process npx -ArgumentList 'electron','.','--remote-debugging-port=9222' -PassThru
-          try { npm run check:ui } finally { if (!$app.HasExited) { Stop-Process -Id $app.Id -Force } }
-          if ($LASTEXITCODE -ne 0) { throw "UI 交互测试失败" }
       - name: Build installer
         run: npm run dist:win --prefix desktop
       - name: Name release installer
