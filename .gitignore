@@ -7,7 +7,10 @@
 *.mobileprovision
 *.gguf
 *.dmg
+*.exe
 agent/node_modules/
+desktop/node_modules/
+desktop/runtime/
 llama_cpp/build/
 llama_cpp_bonsai/build/
 local-harness-ai.app/

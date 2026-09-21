@@ -1,0 +1,11 @@
+{
+  "_comment": "Mac 文案在 Windows 上的等价说法。值为 null 表示该功能在 Windows 上不适用。每一条都是有意为之，check.mjs 只接受这里列出的差异。",
+  "macOS": "系统",
+  "Metal": "CUDA",
+  "llama.cpp · Metal": "llama.cpp · CUDA",
+  "Apple M4": null,
+  "找不到 node。请安装 Node.js，或把 node 放到 /opt/homebrew/bin。": null,
+  "_dead": "以下来自 LauncherStore.agentStatus：Swift 里定义了但没有任何视图引用，Mac 界面上看不到，Windows 也不该凭空造一个。",
+  "运行中": null,
+  "待命": null
+}

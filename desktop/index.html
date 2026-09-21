@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data: file:; frame-src http: https:">
+  <title>local-harness-ai</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="titlebar">local-harness-ai</div>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span>H</span><div><strong>local-harness-ai</strong><small>Local model harness</small></div></div>
+      <nav>
+        <button data-page="agent" class="active">⌘　开发代理</button>
+        <button data-page="overview">▦　概览</button>
+        <button data-page="routes">△　路由</button>
+        <button data-page="logs">☷　日志</button>
+        <button data-page="settings">⚙　设置</button>
+      </nav>
+      <div class="sysinfo">
+        <b id="sys-state">Offline</b>
+        <hr>
+        <div><span>系统</span><span id="sys-os">—</span></div>
+        <div><span>芯片</span><span id="sys-chip">—</span></div>
+        <div><span>内存</span><span id="sys-memory">—</span></div>
+        <div><span>后端</span><span id="sys-backend">CUDA</span></div>
+      </div>
+    </aside>
+
+    <main>
+      <section id="agent" class="page active">
+        <div class="agent-toolbar">
+          <span class="ico">📁</span>
+          <b id="agent-title">新会话</b>
+          <span class="spacer"></span>
+          <span id="source-pill" class="pill">模型未启动</span>
+          <button id="show-overview" class="quiet">模型状态</button>
+          <button id="tool-toggle" class="quiet" title="工具面板">▤</button>
+          <div id="tool-menu" class="popover hidden">
+            <button data-tool="files">文件</button>
+            <button data-tool="browser">浏览器</button>
+            <button data-tool="terminal">终端</button>
+          </div>
+        </div>
+        <div class="agent-layout">
+          <aside class="task-sidebar">
+            <div class="task-head"><b>local-harness-ai</b><span class="ico">🔔</span></div>
+            <button id="new-session" class="quiet left">✎　新对话</button>
+            <div class="projects-label">项目</div>
+            <div id="sessions"></div>
+            <div class="task-foot"><button id="show-overview-foot" class="quiet left">📈　本地模型运行状态</button></div>
+          </aside>
+          <section class="conversation">
+            <div class="transcript-wrap">
+              <div id="agent-transcript" class="transcript"></div>
+              <div id="agent-running" class="system-event hidden"><span class="ico">⋯</span><div><b>正在推理</b><small>已发送，正在等待模型思考或调用工具。</small></div></div>
+            </div>
+            <div class="composer">
+              <div id="attachments" class="attachments"></div>
+              <textarea id="agent-input" placeholder="让代理读取、分析或修改工作区文件。支持拖放、粘贴图片和附件。"></textarea>
+              <input id="agent-files" type="file" multiple hidden>
+              <div class="composer-actions">
+                <button id="workspace" class="quiet" title="选择项目并开始对话">📁</button>
+                <button id="agent-attach" class="quiet" title="添加图片或文件">📎</button>
+                <label class="switch"><input id="allow-writes" type="checkbox" checked><span class="track"></span><span id="writes-label">可写 · 工具已开</span></label>
+                <span class="spacer"></span>
+                <select id="agent-model"></select>
+                <button id="send-agent" class="primary round">↑</button>
+              </div>
+            </div>
+          </section>
+          <aside id="tool-pane" class="tool-pane hidden">
+            <div class="tool-head"><b id="tool-title">文件</b><button id="close-tool" class="quiet" title="隐藏">▤</button></div>
+            <div id="files-tool" class="tool-view">
+              <div class="row"><button id="file-up" class="quiet">‹</button><b id="file-path">工作区</b><span class="spacer"></span><button id="file-refresh" class="quiet">↻</button></div>
+              <input id="file-filter" placeholder="筛选文件…">
+              <div id="file-browser"></div>
+              <pre id="file-preview">从工作区目录选择文件</pre>
+            </div>
+            <div id="browser-tool" class="tool-view hidden">
+              <div class="row"><button id="browser-back" class="quiet">‹</button><button id="browser-forward" class="quiet">›</button><button id="browser-reload" class="quiet">↻</button><input id="browser-url" placeholder="https://example.com"><button id="browser-go">前往</button></div>
+              <webview id="browser-view" src="about:blank"></webview>
+            </div>
+            <div id="terminal-tool" class="tool-view hidden">
+              <pre id="terminal-output">在工作区中执行 shell 命令。</pre>
+              <div class="row"><input id="terminal-command" placeholder="输入命令"><button id="run-command" class="primary">执行</button></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="overview" class="page">
+        <article class="status-card">
+          <span id="status-dot" class="dot"></span>
+          <div>
+            <p class="status-line"><b>Server Status:</b> <span id="status">离线</span></p>
+            <small id="server-desc">本地模型尚未就绪。</small>
+          </div>
+          <span class="spacer"></span>
+          <button id="start" class="primary">启动</button>
+          <button id="stop">停止</button>
+          <button id="test-route-top">测试链路</button>
+        </article>
+
+        <div class="info-strip">
+          <div><label>模型</label><b id="model-label">未选择</b></div>
+          <div><label>地址</label><b>127.0.0.1:7890</b></div>
+          <div><label>后端</label><b id="info-backend">llama.cpp · CUDA</b></div>
+          <div><label>运行时间</label><b id="uptime">—</b></div>
+        </div>
+
+        <div class="perf-grid">
+          <article class="context-card">
+            <label>上下文容量</label>
+            <div class="gauge-row">
+              <svg class="gauge" viewBox="0 0 92 92">
+                <circle cx="46" cy="46" r="38"></circle>
+                <circle id="ctx-gauge" cx="46" cy="46" r="38" class="value"></circle>
+                <text id="context-label" x="46" y="52">8K</text>
+              </svg>
+              <div class="gauge-detail">
+                <div><span>已用</span><span id="ctx-used">0</span></div>
+                <div><span>可用</span><span id="ctx-free">0</span></div>
+                <progress id="ctx-progress" value="0" max="1"></progress>
+              </div>
+            </div>
+            <small>默认 8K。超过 16K 在 16GB 机器上容易换页。</small>
+          </article>
+          <article class="metric"><label>输出速度</label><b><span id="generation-tps">0.0</span></b><span class="unit">tok/s</span><svg id="speed-chart" class="spark" viewBox="0 0 108 28" preserveAspectRatio="none"><polyline points=""></polyline></svg><small id="generation-note">最近一次生成</small></article>
+          <article class="metric"><label>提示词吞吐</label><b><span id="prompt-tps">0.0</span></b><span class="unit">tok/s</span><svg id="prompt-chart" class="spark soft" viewBox="0 0 108 28" preserveAspectRatio="none"><polyline points=""></polyline></svg><small>服务端计时</small></article>
+          <article class="metric"><label>首 token</label><b><span id="ttft">—</span></b><span class="unit">ms</span><hr><small>TTFT</small></article>
+        </div>
+
+        <div class="columns">
+          <article class="log-panel"><div class="panel-title"><div><h3>活动日志</h3><small>服务、速度与诊断</small></div><button id="clear-overview-log">清空</button></div><div id="overview-log" class="loglines"></div></article>
+          <article class="chat-panel">
+            <div class="panel-title"><div><h3>Chat Console</h3><small>本地流式验证</small></div></div>
+            <div id="chat" class="transcript"></div>
+            <div class="row"><input id="chat-input" placeholder="输入消息"><button id="chat-attach">图片</button><input id="chat-images" type="file" multiple accept="image/*" hidden><button id="send-chat" class="primary">发送</button></div>
+            <small id="chat-files"></small>
+          </article>
+        </div>
+      </section>
+
+      <section id="routes" class="page">
+        <header class="page-header"><div><h2>路由</h2><p>Claude Desktop → CC Switch → llama.cpp</p></div></header>
+        <div class="columns">
+          <article class="detail-card"><div><label>Claude Desktop</label><b>127.0.0.1:15721</b><small id="proxy-health">代理未检测到</small></div></article>
+          <article class="detail-card"><div><label>llama.cpp</label><b>127.0.0.1:7890</b><small id="upstream-health">上游离线</small></div></article>
+        </div>
+        <button id="test-route" class="primary">运行完整路由测试</button>
+        <article id="route-result" class="hidden"></article>
+      </section>
+
+      <section id="logs" class="page">
+        <header class="page-header"><div><h2>日志</h2><p>llama.cpp 与应用运行记录</p></div><button id="clear-log">清空</button></header>
+        <article class="log-panel"><div id="all-log" class="loglines"></div></article>
+      </section>
+
+      <section id="settings" class="page">
+        <header class="page-header"><div><h2>设置</h2><p>先保存，再重启本地服务。未保存的更改在离开后会还原。</p></div></header>
+        <form id="settings-form">
+          <fieldset>
+            <legend>推理来源</legend>
+            <div class="segmented" id="source-seg">
+              <label><input type="radio" name="source" value="local"><span>本地 llama.cpp</span></label>
+              <label><input type="radio" name="source" value="cloud"><span>云 API</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset id="local-settings">
+            <legend>本地模型文件</legend>
+            <div class="picker-row"><code id="model-path">未选择 .gguf</code><button type="button" data-pick="model">选择 GGUF</button></div>
+            <input name="model" type="hidden">
+            <label class="toggle"><input name="compatibility" type="checkbox"><div><b>兼容模式</b><small>自动选择加载方式、GPU 层和 Flash Attention；运行上下文上限为 4K，降低内存压力。</small></div></label>
+
+            <b class="group">视觉投影 MMProj（可选）</b>
+            <div class="picker-row"><code id="mmproj-path">文本模型无需选择；视觉模型请选择对应的 mmproj .gguf</code><button type="button" id="remove-mmproj" class="hidden">移除</button><button type="button" data-pick="mmproj">选择 MMProj</button></div>
+            <input name="mmproj" type="hidden">
+
+            <label class="field">聊天模板（可选）<input name="chatTemplate" placeholder="llama3 / chatml / mistral-v3"></label>
+            <small>仅在模型内置模板缺失或回复格式异常时填写，例如 llama3、chatml、mistral-v3。</small>
+          </fieldset>
+
+          <fieldset id="cloud-settings">
+            <legend>云配置</legend>
+            <div class="row"><select id="cloud-profile"></select><button type="button" id="add-cloud">添加配置</button><button type="button" id="delete-cloud">删除配置</button></div>
+            <b class="group">云厂商</b>
+            <div class="segmented" id="preset-seg">
+              <label><input type="radio" name="preset" value="openai"><span>OpenAI</span></label>
+              <label><input type="radio" name="preset" value="anthropic"><span>Anthropic</span></label>
+              <label><input type="radio" name="preset" value="deepseek"><span>DeepSeek</span></label>
+              <label><input type="radio" name="preset" value="openrouter"><span>OpenRouter</span></label>
+              <label><input type="radio" name="preset" value="custom"><span>自定义</span></label>
+            </div>
+            <label class="field">Base URL<input id="cloud-url"></label>
+            <label class="field">模型 ID<input id="cloud-model"></label>
+            <label class="field">API Key<input id="cloud-key" type="password" placeholder="sk-…"></label>
+          </fieldset>
+
+          <fieldset id="llama-settings">
+            <legend>本地 llama.cpp</legend>
+            <label class="field">上下文<select name="context"><option value="4096">4K</option><option value="8192">8K · 推荐</option><option value="16384">16K</option><option value="24576">24K</option><option value="32768">32K</option><option value="65536">64K</option><option value="-1">自定义</option></select></label>
+            <label class="field hidden" id="custom-context-row">自定义 token 数<input id="custom-context" type="number" min="512" max="131072"></label>
+            <small id="context-warning" class="warn hidden">16GB 统一内存上超过 16K 容易换页，生成会掉到 6 tok/s 左右。</small>
+            <b class="group">KV Cache</b>
+            <div class="segmented" id="kv-seg">
+              <label><input type="radio" name="kv" value="q4_0"><span>q4_0 · 推荐</span></label>
+              <label><input type="radio" name="kv" value="q8_0"><span>q8_0</span></label>
+            </div>
+            <label class="toggle"><input name="ngram" type="checkbox"><div><b>N-gram 连续对话模式</b><small>只建议重复度高的多轮对话；此前 1.6–4.7% 接受率会负优化。</small></div></label>
+            <label class="toggle"><input name="reasoning" type="checkbox"><div><b>深度思考</b><small>默认关闭。27B PTQ1_0 在 M4 上约 9 tok/s，思考链会把一次回复拖成几十秒。</small></div></label>
+          </fieldset>
+
+          <div class="row">
+            <button type="button" id="save-settings" class="primary">保存</button>
+            <button type="button" id="apply-settings">重启并应用</button>
+          </div>
+          <small id="dirty-hint" class="warn hidden">有未保存的更改。保存后才会写入设置；本地服务再点重启才生效。</small>
+        </form>
+      </section>
+    </main>
+
+    <aside class="inspector hidden" id="inspector">
+      <div class="insp-head"><b>Claude Desktop / CC Switch</b><span id="cc-pill" class="pill">Offline</span></div>
+      <small id="cc-status">等待 CC Switch 代理。</small>
+      <div class="route-rows">
+        <div><span>Client</span><span>Claude Desktop</span></div>
+        <div><span>Proxy</span><span>127.0.0.1:15721</span></div>
+        <div><span>Upstream</span><span>127.0.0.1:7890</span></div>
+        <div><span>Model</span><span>qwen</span></div>
+      </div>
+      <div class="row"><button id="insp-test-route">测试路由</button><button id="copy-route">复制</button></div>
+      <div id="insp-route-result"></div>
+      <hr>
+      <b>加速状态</b>
+      <div class="opt-row"><div><span class="dot on"></span><b>Turbo KV</b><span id="opt-kv-state" class="state">启用</span></div><small id="opt-kv-detail">q4_0 K/V Cache</small></div>
+      <div class="opt-row"><div><span id="opt-ngram-dot" class="dot"></span><b>N-gram Speculative</b><span id="opt-ngram-state" class="state">关闭</span></div><small id="opt-ngram-detail">低接受率时会拖慢生成</small></div>
+      <hr>
+      <b>运行配置</b>
+      <div class="codeblock">
+        <code id="cfg-ctx">CTX=8192</code>
+        <code id="cfg-kv">KV=q4_0</code>
+        <code>FLASH_ATTN=on</code>
+        <code id="cfg-spec">SPEC=0</code>
+        <code>BATCH=512 · UBATCH=512</code>
+      </div>
+      <button id="copy-endpoint" class="wide">复制 OpenAI 地址</button>
+    </aside>
+  </div>
+
+  <footer class="statusbar">
+    <span id="phase-dot">●</span>
+    <span id="bar-state">llama.cpp offline</span>
+    <span class="spacer"></span>
+    <span>输出速度 <span id="bar-tps">0.0</span> tok/s</span>
+    <span>·</span>
+    <span>日志自动滚动</span>
+  </footer>
+
+  <dialog id="confirm-dialog">
+    <form method="dialog">
+      <p>删除这个会话？工作区里的文件不会被删。</p>
+      <div class="row"><span class="spacer"></span><button value="">取消</button><button value="ok" class="danger">删除</button></div>
+    </form>
+  </dialog>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
