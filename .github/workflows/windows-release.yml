@@ -69,7 +69,8 @@ jobs:
           Write-Host "bundled: $($dlls -join ', ')"
           # CI runner 没有 NVIDIA 卡：验证缺显卡时能回落到 CPU，而不是缺 DLL 直接崩。
           & "$dst\llama-server.exe" --version
-          if ($LASTEXITCODE -ne 0) { throw "llama-server failed before packaging" }      - name: Install desktop dependencies
+          if ($LASTEXITCODE -ne 0) { throw "llama-server failed before packaging" }
+      - name: Install desktop dependencies
         run: |
           npm ci --prefix agent
           npm ci --prefix desktop
