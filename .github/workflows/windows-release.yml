@@ -43,13 +43,33 @@ jobs:
           rem Ninja 不依赖 VS CUDA toolset；sm_75..sm_120 覆盖 RTX 20/30/40/50 与 A100。
           cmake -S llama_cpp_bonsai -B build-win -G "Ninja Multi-Config" -DBUILD_SHARED_LIBS=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DLLAMA_CURL=OFF -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="75;80;86;89;120" -DGGML_VULKAN=OFF -DGGML_OPENMP=OFF
           cmake --build build-win --config Release --target llama-server --parallel
-          copy "%CUDA_PATH%\bin\cudart64_*.dll" build-win\bin\Release\
-          copy "%CUDA_PATH%\bin\cublas64_*.dll" build-win\bin\Release\
-          copy "%CUDA_PATH%\bin\cublasLt64_*.dll" build-win\bin\Release\
-          rem CI runner 没有 NVIDIA 卡：同时验证无显卡时能回落到 CPU 而不是崩溃。
-          build-win\bin\Release\llama-server.exe --version
           if errorlevel 1 exit /b 1
-      - name: Install desktop dependencies
+      - name: Bundle CUDA runtime DLLs
+        shell: pwsh
+        run: |
+          # CUDA 13 精简安装把 DLL 分在 bin / lib / bin\x64，cmd copy 通配常落空。
+          # 对齐上游 llama_cpp_bonsai release.yml 的 robocopy 多路径搜集。
+          $dst = "build-win\bin\Release"
+          if (!(Test-Path "$dst\llama-server.exe")) { throw "llama-server.exe missing after build" }
+          foreach ($src in @("$env:CUDA_PATH\bin", "$env:CUDA_PATH\lib", "$env:CUDA_PATH\bin\x64")) {
+            if (Test-Path $src) {
+              robocopy $src $dst "cudart64_*.dll" "cublas64_*.dll" "cublasLt64_*.dll" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+              # robocopy: 0-7 都算成功（含「无文件可拷」），≥8 才是真错。
+              if ($LASTEXITCODE -ge 8) { throw "robocopy failed from $src (code $LASTEXITCODE)" }
+            }
+          }
+          $dlls = Get-ChildItem $dst -Filter "*.dll" | Select-Object -ExpandProperty Name
+          foreach ($need in "cudart64_","cublas64_","cublasLt64_") {
+            if (-not ($dlls | Where-Object { $_ -like "$need*" })) {
+              Write-Host "CUDA_PATH=$env:CUDA_PATH"
+              Get-ChildItem "$env:CUDA_PATH" -Recurse -Filter "*cudart*" -ErrorAction SilentlyContinue | Select-Object -First 20 FullName
+              throw "missing CUDA runtime DLL prefix: $need* (found: $($dlls -join ', '))"
+            }
+          }
+          Write-Host "bundled: $($dlls -join ', ')"
+          # CI runner 没有 NVIDIA 卡：验证缺显卡时能回落到 CPU，而不是缺 DLL 直接崩。
+          & "$dst\llama-server.exe" --version
+          if ($LASTEXITCODE -ne 0) { throw "llama-server failed before packaging" }      - name: Install desktop dependencies
         run: |
           npm ci --prefix agent
           npm ci --prefix desktop
