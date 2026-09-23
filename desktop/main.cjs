@@ -198,8 +198,8 @@ async function startServer() {
   if (config.ngram) args.push("--spec-type", "ngram-mod", "--spec-ngram-mod-n-min", "2", "--spec-ngram-mod-n-max", "4", "--spec-ngram-mod-n-match", "16");
   if (process.platform === "win32" && app.isPackaged) {
     const files = readdirSync(runtimeRoot());
-    const missing = ["cudart64_13.dll", "cublas64_13.dll", "cublasLt64_13.dll"].filter((name) => !files.some((file) => file.toLowerCase() === name.toLowerCase()));
-    if (missing.length) throw new Error(`安装包缺少 CUDA 运行库：${missing.join(", ")}。请重新安装应用。`);
+    const missing = ["cudart64_13.dll", "cublas64_13.dll", "cublasLt64_13.dll", "libssl-3-x64.dll", "libcrypto-3-x64.dll"].filter((name) => !files.some((file) => file.toLowerCase() === name.toLowerCase()));
+    if (missing.length) throw new Error(`安装包缺少运行库：${missing.join(", ")}。请重新安装应用。`);
   }
   const env = process.platform === "win32"
     ? { ...process.env, PATH: `${runtimeRoot()};${process.env.PATH || ""}` }
@@ -214,7 +214,7 @@ async function startServer() {
     // Node on Windows reports NTSTATUS as an unsigned 32-bit exit code.
     const status = code == null ? null : code >>> 0;
     if (status === 0xC0000135) {
-      emitLog("llama.cpp 无法加载所需 DLL（0xC0000135）。请检查安装目录中的 CUDA DLL、NVIDIA 驱动及系统运行库。", "error");
+      emitLog("llama.cpp 无法加载所需 DLL（0xC0000135）。请确认安装目录中有 CUDA DLL 以及 libssl-3-x64.dll、libcrypto-3-x64.dll，并已安装 NVIDIA 驱动与系统运行库。", "error");
     } else {
       emitLog(`llama.cpp 已退出（code ${code ?? "signal"}${status && status !== code ? ` / 0x${status.toString(16).toUpperCase()}` : ""}）`, code ? "error" : "info");
     }

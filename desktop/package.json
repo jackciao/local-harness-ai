@@ -19,7 +19,8 @@
     "productName": "local-harness-ai",
     "files": [
       "**/*",
-      "!node_modules/.cache/**"
+      "!node_modules/.cache/**",
+      "!runtime/**"
     ],
     "asar": true,
     "asarUnpack": [
