@@ -13,6 +13,11 @@ cpSync(server, resolve(runtime, process.platform === "win32" ? "llama-server.exe
 // CUDA 运行库必须与 llama-server.exe 同目录，否则无 NVIDIA 环境下进程根本起不来。
 const dlls = readdirSync(dirname(server)).filter((name) => name.toLowerCase().endsWith(".dll"));
 for (const dll of dlls) cpSync(resolve(dirname(server), dll), resolve(runtime, dll));
+if (process.platform === "win32") {
+  const required = ["cudart64_13.dll", "cublas64_13.dll", "cublasLt64_13.dll"];
+  const missing = required.filter((name) => !dlls.some((dll) => dll.toLowerCase() === name.toLowerCase()));
+  if (missing.length) throw new Error(`llama-server 运行库不完整：${missing.join(", ")}`);
+}
 if (dlls.length) console.log(`runtime dlls: ${dlls.join(", ")}`);
 
 cpSync(resolve(root, "agent"), resolve(runtime, "agent"), {

@@ -196,16 +196,28 @@ async function startServer() {
   if (config.mmproj) args.push("-mm", config.mmproj);
   if (config.chatTemplate) args.push("--chat-template", config.chatTemplate);
   if (config.ngram) args.push("--spec-type", "ngram-mod", "--spec-ngram-mod-n-min", "2", "--spec-ngram-mod-n-max", "4", "--spec-ngram-mod-n-match", "16");
-  const child = spawn(serverPath(), args, { cwd: runtimeRoot(), windowsHide: true });
+  if (process.platform === "win32" && app.isPackaged) {
+    const files = readdirSync(runtimeRoot());
+    const missing = ["cudart64_13.dll", "cublas64_13.dll", "cublasLt64_13.dll"].filter((name) => !files.some((file) => file.toLowerCase() === name.toLowerCase()));
+    if (missing.length) throw new Error(`安装包缺少 CUDA 运行库：${missing.join(", ")}。请重新安装应用。`);
+  }
+  const env = process.platform === "win32"
+    ? { ...process.env, PATH: `${runtimeRoot()};${process.env.PATH || ""}` }
+    : process.env;
+  const child = spawn(serverPath(), args, { cwd: runtimeRoot(), env, windowsHide: true });
   server = child;
   startedAt = Date.now();
   child.stdout.on("data", splitLines);
   child.stderr.on("data", splitLines);
   child.on("error", (error) => emitLog(`llama.cpp 启动失败：${error.message}`, "error"));
   child.on("exit", (code) => {
-    // 0xC0000135 = STATUS_DLL_NOT_FOUND，几乎总是 CUDA 运行库缺失。
-    if (code === -1073741515) emitLog("缺少 CUDA 运行库，llama-server 无法启动。请重新安装应用。", "error");
-    else emitLog(`llama.cpp 已退出（code ${code ?? "signal"}）`, code ? "error" : "info");
+    // Node on Windows reports NTSTATUS as an unsigned 32-bit exit code.
+    const status = code == null ? null : code >>> 0;
+    if (status === 0xC0000135) {
+      emitLog("llama.cpp 无法加载所需 DLL（0xC0000135）。请检查安装目录中的 CUDA DLL、NVIDIA 驱动及系统运行库。", "error");
+    } else {
+      emitLog(`llama.cpp 已退出（code ${code ?? "signal"}${status && status !== code ? ` / 0x${status.toString(16).toUpperCase()}` : ""}）`, code ? "error" : "info");
+    }
     if (server === child) { server = undefined; startedAt = undefined; }
   });
   emitLog(`启动 llama.cpp · ${runtimeContext() / 1024}K context · KV ${config.kv} · ${compatible ? "兼容模式" : "高速模式"} · 思考 ${config.reasoning ? "开" : "关"}`, "success");
